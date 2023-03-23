@@ -19,7 +19,7 @@ jobs:
     #************ NODE STAGE 1 ******************#
 
     - name: Set up Node.js environment
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: '16.x'
 
