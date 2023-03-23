@@ -69,12 +69,6 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/prasanna:${{ github.sha }}
-      secrets:
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Push Docker image to DockerHub
-        run: docker push $DOCKER_USERNAME/prasanna:${{ github.sha }}
 
     #************ KUBERNETES STAGE 4 ******************#
 
