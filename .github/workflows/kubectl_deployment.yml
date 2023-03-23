@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejsapp-deployment
+spec:
+  selector:
+    matchLabels:
+      run: nodejsapp
+  replicas: 3 # You can adjust this based on your needs
+  template:
+    metadata:
+      labels:
+        run: nodejsapp
+    spec:
+      containers:
+        - name: nodejsapp
+          image: prasurani1/nodejsapp:latest # Replace with your Docker image name
+          ports:
+            - containerPort: 80 # Replace with the port your Node.js app listens on
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejsapp-service # Replace with the app name. 
+spec:
+  selector:
+    run: nodejsapp
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 4000 # Replace with the port your Node.js app listens on
+      # nodePort: 31000
+  type: LoadBalancer # Use LoadBalancer for cloud deployments or NodePort for local development

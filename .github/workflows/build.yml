@@ -1,0 +1,75 @@
+name: Prasanna NodeJs Workflow
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+      types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    # If SonarQube is Install on a server use the commented code if not use SonarCloud.
+    # - name: Run SonarQube analysis
+    #   uses: sonarsource/sonarqube-scan-action@v1
+    #   with:
+    #     sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
+    #     sonar-login: ${{ secrets.SONAR_TOKEN }}
+    #     project-key: your-project-key
+    #     project-name: your-project-name
+
+    # Using SonarCloud
+    - name: Run SonarQube analysis
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Github token is automatically generated
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} #create an account https://sonarcloud.io/ and generated a security token, store it under your github project Secret and Variable.  
+
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/your-image-name:${{ github.sha }}
+      secrets:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Push Docker image to DockerHub
+        run: docker push $DOCKER_USERNAME/my-node-app:latest
+
+    - name: Deploy to Kubernetes
+      uses: appleboy/kubectl-action@master
+      with:
+        args: apply -f kubectl_deployment.yaml
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
