@@ -72,6 +72,7 @@ jobs:
 
     #************ KUBERNETES STAGE 4 ******************#
 
+
     # - name: Install Kubectl
     #   uses: azure/setup-kubectl@v3
     #   with:
@@ -91,3 +92,32 @@ jobs:
     # - name: Deploy to EKS
     #   run:
     #     kubectl apply -f kubectl_deployment.yaml
+
+  deploy: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Log in to EC2 instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          password: ${{ secrets.EC2_PASSWORD }}
+          port: ${{ secrets.EC2_PORT }}
+          script: |
+            echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+            sudo usermod -aG microk8s $USER
+            sudo chown -f -R $USER ~/.kube
+            sudo systemctl restart snap.microk8s.daemon-apiserver.service
+
+      - name: Deploy Kubernetes cluster
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          password: ${{ secrets.EC2_PASSWORD }}
+          port: ${{ secrets.EC2_PORT }}
+          script: |
+            microk8s kubectl apply -f kubectl_deployment.yml
+    
